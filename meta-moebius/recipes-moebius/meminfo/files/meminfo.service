@@ -1,0 +1,9 @@
+[Unit]
+Description=Moebius memory statistics service
+
+[Service]
+ExecStart=@BINDIR@/meminfo
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
