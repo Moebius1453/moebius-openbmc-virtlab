@@ -15,7 +15,8 @@ int main()
     while (true)
     {  
         bus.process_discard();
-        bus.wait();
+        bus.wait(5000000);
+        memInfo.update();
     }
     
     return 0;

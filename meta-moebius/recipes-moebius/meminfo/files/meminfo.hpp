@@ -15,15 +15,23 @@ class MemInfo : public sdbusplus::server::object_t<MemoryStatsIntf>
         MemInfo(sdbusplus::bus_t& bus, const char* path) :
             sdbusplus::server::object_t<MemoryStatsIntf>(bus, path)
         {}
+    void update()
+    {
+        memTotal(0);
+        memAvailable(0);
+    }
+    private:
     uint64_t memTotal(uint64_t value) override
     {
-        return readProcMeminfo("MemTotal");
+        value = readProcMeminfo("MemTotal");
+        return MemoryStatsIntf::memTotal(value); ;
     }
     uint64_t memAvailable(uint64_t value) override
     {
-        return readProcMeminfo("MemAvailable");
+        value = readProcMeminfo("MemAvailable");
+        return MemoryStatsIntf::memAvailable(value); ;
     }
-   private:
+   
     static uint64_t readProcMeminfo(const std::string& key)
     {
         std::ifstream file("/proc/meminfo");
