@@ -12,6 +12,6 @@ executable('meminfo',
     gen_server_hpp,
     gen_server_cpp,
     dependencies: [sdbusplus_dep],
-    include_directories: include_directories('.'),
+    include_directories: include_directories('gen'),
     install: true)
 
