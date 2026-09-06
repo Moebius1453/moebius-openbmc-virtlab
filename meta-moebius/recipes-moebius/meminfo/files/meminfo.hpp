@@ -1,4 +1,6 @@
 #pragma once
+
+#include <xyz/moebius/MemoryStats/server.hpp>
 #include <sdbusplus/server/object.hpp>
 #include <cstdint>   
 #include <fstream> 

@@ -1,7 +1,7 @@
 #include <sdbusplus/bus.hpp>
 #include <sdbusplus/server/manager.hpp>
 
-#include "meminfo.h"
+#include "meminfo.hpp"
 
 int main()
 {
@@ -16,7 +16,6 @@ int main()
     {  
         bus.process_discard();
         bus.wait();
-        /* code */
     }
     
     return 0;
