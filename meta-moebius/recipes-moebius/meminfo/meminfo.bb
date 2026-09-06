@@ -14,7 +14,7 @@ SRC_URI = "file://meson.build \
            file://interfaces \
            "
 
-S = "${WORKDIR}"
+S = "${UNPACKDIR}"
 
 SYSTEMD_SERVICE:${PN} = "meminfo.service"
 
