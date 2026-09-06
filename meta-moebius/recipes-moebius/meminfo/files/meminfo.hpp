@@ -7,7 +7,8 @@
 #include <string>
 
 using MemoryStatsIntf =
-    sdbusplus::xyz::moebius::MemoryStats::server::MemoryStats;
+    sdbusplus::server::xyz::moebius::MemoryStats;
+
 class MemInfo : public sdbusplus::server::object_t<MemoryStatsIntf>
 {
     public:

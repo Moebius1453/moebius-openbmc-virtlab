@@ -12,6 +12,7 @@ SRC_URI = "file://meson.build \
            file://main.cpp \
            file://meminfo.hpp \
            file://interfaces \
+           file://gen \
            "
 
 S = "${UNPACKDIR}"

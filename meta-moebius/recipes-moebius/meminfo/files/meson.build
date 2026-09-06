@@ -9,6 +9,7 @@ subdir('gen')
 
 executable('meminfo',
     'main.cpp',
+    gen_common_hpp,
     gen_server_hpp,
     gen_server_cpp,
     dependencies: [sdbusplus_dep],

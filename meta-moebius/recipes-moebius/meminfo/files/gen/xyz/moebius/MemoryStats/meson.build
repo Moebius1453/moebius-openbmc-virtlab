@@ -4,7 +4,7 @@ gen_server_hpp = custom_target(
     output: 'server.hpp',
     command: [
         sdbuspp, '-r', yaml_root,
-        'interface', 'server-header', 'xyz/moebius/MemoryStats',
+        'interface', 'server-header', 'xyz.moebius.MemoryStats',
     ],
     capture: true,
 )
@@ -15,7 +15,18 @@ gen_server_cpp = custom_target(
     output: 'server.cpp',
     command: [
         sdbuspp, '-r', yaml_root,
-        'interface', 'server-cpp', 'xyz/moebius/MemoryStats',
+        'interface', 'server-cpp', 'xyz.moebius.MemoryStats',
+    ],
+    capture: true,
+)
+
+gen_common_hpp = custom_target(
+    'memorystats-common-header',
+    input: yaml_root / 'xyz/moebius/MemoryStats.interface.yaml',
+    output: 'common.hpp',
+    command: [
+        sdbuspp, '-r', yaml_root,
+        'interface', 'common-header', 'xyz.moebius.MemoryStats',
     ],
     capture: true,
 )
