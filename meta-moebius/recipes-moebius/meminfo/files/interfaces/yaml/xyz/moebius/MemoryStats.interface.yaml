@@ -9,3 +9,7 @@ properties:
       type: uint64
       description: >
           Available RAM in KB, as reported by /proc/meminfo.
+methods:
+    - name: Refresh
+      description: >
+          Force an immediate re-read of memory statistics.

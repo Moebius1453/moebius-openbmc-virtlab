@@ -45,5 +45,11 @@ class MemInfo : public sdbusplus::server::object_t<MemoryStatsIntf>
         }
         return 0;
     }
+    void refresh() override
+    {
+        update();
+    }
 };
+
+
 
