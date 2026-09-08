@@ -1,0 +1,9 @@
+[Unit]
+Description=Moebius memory watcher service
+
+[Service]
+ExecStart=@BINDIR@/memwatcher
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
