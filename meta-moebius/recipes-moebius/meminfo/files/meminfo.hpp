@@ -17,7 +17,7 @@ class MemInfo : public sdbusplus::server::object_t<MemoryStatsIntf>
         {}
     void update()
     {
-        memTotal(0);
+        memTotal(0); 
         memAvailable(0);
     }
     private:
