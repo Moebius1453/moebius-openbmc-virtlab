@@ -1,5 +1,4 @@
 #include <sdbusplus/bus.hpp>
-#include <sdbusplus/server/manager.hpp>
 
 #include "watcher.hpp"
 
