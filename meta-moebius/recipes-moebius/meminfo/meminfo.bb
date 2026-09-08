@@ -18,4 +18,4 @@ SRC_URI = "file://meson.build \
 S = "${UNPACKDIR}"
 
 SYSTEMD_SERVICE:${PN} = "meminfo.service"
-
+IMAGE_INSTALL:append = " meminfo memwatcher"
