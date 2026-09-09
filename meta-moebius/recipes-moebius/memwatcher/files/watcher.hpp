@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <iostream>
 #include <variant>
+#include <map>
+#include <vector>
+#include <string>
 
 class MemWatcher
 {
@@ -29,6 +32,20 @@ class MemWatcher
         }
         last = avail;
         hasLast = true;
+    }
+    void onSignal(sdbusplus::message_t& msg)
+    {
+        std::string interfaceName;
+        std::map<std::string, std::variant<double>> changed;
+        std::vector<std::string> invalidated;
+        msg.read(interfaceName, changed, invalidated);
+
+        auto it = changed.find("Value");
+        if (it != changed.end())
+        {
+            std::cout << "memwatcher: HealthMon cpu/user = "
+                      << std::get<double>(it->second) << std::endl;
+        }
     }
 
   private:
