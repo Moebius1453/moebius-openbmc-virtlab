@@ -1,1 +1,1 @@
-IMAGE_INSTALL:append = " meminfo"
+IMAGE_INSTALL:append = " meminfo memwatcher"
