@@ -9,8 +9,8 @@ int main()
     bus.request_name("xyz.moebius.MemInfo");
 
     sdbusplus::server::manager_t objManager(
-        bus, "/xyz/moebius");
-    MemInfo memInfo(bus, "/xyz/moebius/meminfo");
+        bus, "/xyz/openbmc_project/metric/bmc/memory");
+    MemInfo memInfo(bus, "/xyz/openbmc_project/metric/bmc/memory/used");
 
     while (true)
     {  

@@ -1,36 +1,28 @@
 #pragma once
 
-#include <xyz/moebius/MemoryStats/server.hpp>
+#include <xyz/openbmc_project/Metric/Value/server.hpp>
 #include <sdbusplus/server/object.hpp>
 #include <cstdint>   
 #include <fstream> 
 #include <string>
 
-using MemoryStatsIntf =
-    sdbusplus::server::xyz::moebius::MemoryStats;
+using MetricValueIntf = sdbusplus::server::xyz::openbmc_project::metric::Value;
 
-class MemInfo : public sdbusplus::server::object_t<MemoryStatsIntf>
+class MemInfo : public sdbusplus::server::object_t<MetricValueIntf>
 {
     public:
         MemInfo(sdbusplus::bus_t& bus, const char* path) :
-            sdbusplus::server::object_t<MemoryStatsIntf>(bus, path)
+            sdbusplus::server::object_t<MetricValueIntf>(bus, path)
         {}
     void update()
-    {
-        memTotal(0); 
-        memAvailable(0);
-    }
+{
+    uint64_t total     = readProcMeminfo("MemTotal");
+    uint64_t available = readProcMeminfo("MemAvailable");
+
+    value( (total - available) * 1024 );
+}
+
     private:
-    uint64_t memTotal(uint64_t value) override
-    {
-        value = readProcMeminfo("MemTotal");
-        return MemoryStatsIntf::memTotal(value); ;
-    }
-    uint64_t memAvailable(uint64_t value) override
-    {
-        value = readProcMeminfo("MemAvailable");
-        return MemoryStatsIntf::memAvailable(value); ;
-    }
    
     static uint64_t readProcMeminfo(const std::string& key)
     {
@@ -44,10 +36,6 @@ class MemInfo : public sdbusplus::server::object_t<MemoryStatsIntf>
             }
         }
         return 0;
-    }
-    void refresh() override
-    {
-        update();
     }
 };
 
