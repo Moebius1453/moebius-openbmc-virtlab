@@ -1,0 +1,9 @@
+[Unit]
+Description=Moebius memory usage sensor (for web)
+
+[Service]
+ExecStart=@BINDIR@/meminfoweb
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

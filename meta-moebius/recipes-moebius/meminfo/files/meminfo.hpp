@@ -13,7 +13,7 @@ class MemInfo : public sdbusplus::server::object_t<MetricValueIntf>
     public:
         enum class Mode { Used, Total };
 
-        MemInfo(sdbusplus::bus_t& bus, const char* path) :
+        MemInfo(sdbusplus::bus_t& bus, const char* path ,Mode mode) :
             sdbusplus::server::object_t<MetricValueIntf>(bus, path),
             mode_(mode)
         {}
@@ -34,7 +34,6 @@ class MemInfo : public sdbusplus::server::object_t<MetricValueIntf>
 
     private:
         Mode mode_;                    // 记住"我是哪种"
-        static uint64_t readProcMeminfo(const std::string& key);
    
     static uint64_t readProcMeminfo(const std::string& key)
     {
