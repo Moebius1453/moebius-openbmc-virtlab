@@ -10,13 +10,15 @@ int main()
 
     sdbusplus::server::manager_t objManager(
         bus, "/xyz/openbmc_project/metric/bmc/memory");
-    MemInfo memInfo(bus, "/xyz/openbmc_project/metric/bmc/memory/used");
-
+    MemInfo memInfoUsed(bus, "/xyz/openbmc_project/metric/bmc/memory/used" , MemInfo::Mode::Used);
+    MemInfo memInfoTotal(bus, "/xyz/openbmc_project/metric/bmc/memory/total" , MemInfo::Mode::Total);
     while (true)
     {  
         bus.process_discard();
         bus.wait(5000000);
-        memInfo.update();
+        memInfoUsed.update();
+        memInfoTotal.update();
+
     }
     
     return 0;
