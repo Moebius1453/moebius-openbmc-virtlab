@@ -1,0 +1,10 @@
+[Unit]
+Description=Moebius BMC health reporter daemon
+
+[Service]
+ExecStart=@BINDIR@/healthreporter
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
