@@ -31,16 +31,34 @@ class HealthReporter : public sdbusplus::server::object_t<SensorValueIntf, OpSta
 
     void update()
         {
-            // ---- 1. 读源（例子给了一个，其余照葫芦画瓢）----
+            // ---- 1. 读源 ----
             std::string bmcState = tail(readStrProp(
                 "xyz.openbmc_project.State.BMC", "/xyz/openbmc_project/state/bmc0",
                 "xyz.openbmc_project.State.BMC", "CurrentBMCState"));
             // TODO: hostState ← State.Host / host0 / State.Host / CurrentHostState
+            std::string hostState = tail(readStrProp(
+                "xyz.openbmc_project.State.Host", "/xyz/openbmc_project/state/host0",
+                "xyz.openbmc_project.State.Host", "CurrentHostState"));
             // TODO: osState   ← State.Host / host0 / State.OperatingSystem.Status / OperatingSystemState
+            std::string osState = tail(readStrProp(
+                "xyz.openbmc_project.State.Host", "/xyz/openbmc_project/state/host0",
+                "xyz.openbmc_project.State.OperatingSystem.Status", "OperatingSystemState"));
             // TODO: powerState← State.Chassis / chassis0 / State.Chassis / CurrentPowerState
+            std::string powerState = tail(readStrProp(
+                "xyz.openbmc_project.State.Chassis", "/xyz/openbmc_project/state/chassis0",
+                "xyz.openbmc_project.State.Chassis", "CurrentPowerState"));
             // TODO: lastReboot ← readU64Prop(... State.BMC ... LastRebootTime)
+            uint64_t lastReboot = readU64Prop(
+                "xyz.openbmc_project.State.BMC", "/xyz.openbmc_project/state/bmc0",
+                "xyz.openbmc_project.State.BMC", "LastRebootTime");
             // TODO: used, total ← 照 meminfoweb 的 readMetric 写（double）
+            double used  = readMetric("/xyz/openbmc_project/metric/bmc/memory/used");
+            double total = readMetric("/xyz/openbmc_project/metric/bmc/memory/total");
 
+            auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                             std::chrono::system_clock::now().time_since_epoch()).count();
+            uint64_t uptimeSec = (nowMs - lastReboot) / 1000;
+            
             // ---- 2. 判级（规则）：----
             // OK 起步；bmcState != "Ready" → Critical；memPct>95 → Critical；
             // memPct>80 且还是 OK → Warning
@@ -51,7 +69,7 @@ class HealthReporter : public sdbusplus::server::object_t<SensorValueIntf, OpSta
             // score = OK?100 : Warning?50 : 0 ；functional = (level != "Critical")
             // TODO: SensorValueIntf::value(score);  OpStatusIntf::functional(...);
 
-            // ---- 4. journal（③④ 这两条搬进这里）----
+            // ---- 4. journal ----
             // TODO: 拼一行 cout（把 uptime、memPct、level、host/os/power 都打出来）
         }
 
@@ -70,7 +88,32 @@ class HealthReporter : public sdbusplus::server::object_t<SensorValueIntf, OpSta
             reply.read(v);
             return std::get<std::string>(v);
         }
+        uint64_t readU64Prop(const std::string& service, const std::string& path,
+                                const std::string& iface, const std::string& prop)
+        {
+            auto method = bus_.new_method_call(service.c_str(), path.c_str(),
+                                   "org.freedesktop.DBus.Properties", "Get");
 
+            method.append(iface, prop);
+            auto reply = bus_.call(method);
+            std::variant<uint64_t> v;
+            reply.read(v);
+            return std::get<uint64_t>(v);
+        }
+        
+        double readMetric(const std::string& objectPath)
+        {
+            auto method = bus_.new_method_call(
+                "xyz.moebius.MemInfo", objectPath,
+                "org.freedesktop.DBus.Properties", "Get");
+            method.append("xyz.openbmc_project.Metric.Value", "Value");
+
+            auto reply = bus_.call(method);
+
+            std::variant<double> v;
+            reply.read(v);
+            return std::get<double>(v);
+        }
 
         static std::string tail(const std::string& s) { return s.substr(s.rfind('.') + 1); }
 
