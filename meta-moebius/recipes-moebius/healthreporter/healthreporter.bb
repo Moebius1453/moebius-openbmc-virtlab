@@ -7,6 +7,8 @@ DEPENDS += "sdbusplus phosphor-dbus-interfaces"
 
 inherit meson pkgconfig
 inherit obmc-phosphor-systemd
+CXXFLAGS:append = " -O0"
+
 
 SRC_URI = "file://meson.build \
            file://main.cpp \
