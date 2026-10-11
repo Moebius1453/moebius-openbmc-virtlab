@@ -7,8 +7,6 @@
 #include <chrono>
 #include <string>
 #include <variant>
-#include <cstring>
-
 
 using SensorValueIntf = sdbusplus::server::xyz::openbmc_project::sensor::Value;
 using OpStatusIntf = sdbusplus::server::xyz::openbmc_project::state::decorator::OperationalStatus;
@@ -21,50 +19,41 @@ class HealthReporter : public sdbusplus::server::object_t<SensorValueIntf, OpSta
             sdbusplus::server::object_t<SensorValueIntf, OpStatusIntf, AssocDefIntf>(bus, path),
             bus_(bus)
         {
-            unit(SensorValueIntf::Unit::Percent);   
-            associations({                          
+            unit(SensorValueIntf::Unit::Percent);
+            associations({
                 {"chassis", "all_sensors",
                  "/xyz/openbmc_project/inventory/system/chassis"}
             });
         }
-    
-        
 
-    void update()
+        void update()
         {
             // ---- 1. 读源 ----
             std::string bmcState = tail(readStrProp(
                 "xyz.openbmc_project.State.BMC", "/xyz/openbmc_project/state/bmc0",
                 "xyz.openbmc_project.State.BMC", "CurrentBMCState"));
-            // TODO: hostState ← State.Host / host0 / State.Host / CurrentHostState
             std::string hostState = tail(readStrProp(
                 "xyz.openbmc_project.State.Host", "/xyz/openbmc_project/state/host0",
                 "xyz.openbmc_project.State.Host", "CurrentHostState"));
-            // TODO: osState   ← State.Host / host0 / State.OperatingSystem.Status / OperatingSystemState
             std::string osState = tail(readStrProp(
                 "xyz.openbmc_project.State.Host", "/xyz/openbmc_project/state/host0",
                 "xyz.openbmc_project.State.OperatingSystem.Status", "OperatingSystemState"));
-            // TODO: powerState← State.Chassis / chassis0 / State.Chassis / CurrentPowerState
             std::string powerState = tail(readStrProp(
                 "xyz.openbmc_project.State.Chassis", "/xyz/openbmc_project/state/chassis0",
                 "xyz.openbmc_project.State.Chassis", "CurrentPowerState"));
-            // TODO: lastReboot ← readU64Prop(... State.BMC ... LastRebootTime)
             uint64_t lastReboot = readU64Prop(
                 "xyz.openbmc_project.State.BMC", "/xyz/openbmc_project/state/bmc0",
                 "xyz.openbmc_project.State.BMC", "LastRebootTime");
-            // TODO: used, total ← 照 meminfoweb 的 readMetric 写（double）
-            double used  = readMetric("/xyz/openbmc_project/metric/bmc/memory/used");
+            double used = readMetric("/xyz/openbmc_project/metric/bmc/memory/used");
             double total = readMetric("/xyz/openbmc_project/metric/bmc/memory/total");
 
             auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
                              std::chrono::system_clock::now().time_since_epoch()).count();
             uint64_t uptimeSec = (nowMs - lastReboot) / 1000;
-            
-            // ---- 2. 判级（规则）：----
-            // OK 起步；bmcState != "Ready" → Critical；memPct>95 → Critical；
-            // memPct>80 且还是 OK → Warning
+
+            // ---- 2. 判级 ----
+            // BMC 非 Ready 或内存 >95% 为 Critical；内存 >80% 且未 Critical 为 Warning
             std::string level = "OK";
-            // TODO: 三条判定
             double memPct = used / total * 100.0;
 
             if (bmcState != "Ready")
@@ -82,16 +71,11 @@ class HealthReporter : public sdbusplus::server::object_t<SensorValueIntf, OpSta
             }
 
             // ---- 3. 写 D-Bus ----
-            // score = OK?100 : Warning?50 : 0 ；functional = (level != "Critical")
-
-            // TODO: SensorValueIntf::value(score);  OpStatusIntf::functional(...);
             double score = (level == "OK") ? 100.0 : ((level == "Warning") ? 50.0 : 0.0);
-
             SensorValueIntf::value(score);
             OpStatusIntf::functional(level != "Critical");
 
-            // ---- 4. journal ----
-            // TODO: 拼一行 cout（把 uptime、memPct、level、host/os/power 都打出来）
+            // ---- 4. journal 心跳 ----
             std::cout << "[HealthReporter] level=" << level
                       << " score=" << score
                       << " uptime=" << uptimeSec << "s"
@@ -100,7 +84,6 @@ class HealthReporter : public sdbusplus::server::object_t<SensorValueIntf, OpSta
                       << " os=" << osState
                       << " power=" << powerState
                       << std::endl;
-                   
         }
 
     private:
@@ -111,145 +94,40 @@ class HealthReporter : public sdbusplus::server::object_t<SensorValueIntf, OpSta
         {
             std::string svc = service;
             std::string pth = path;
-            std::cout << "[DBG] str: [" << service << "] [" << path << "] [" << iface << "] [" << prop << "]" << std::endl;
             auto method = bus_.new_method_call(svc.c_str(), pth.c_str(),
                                    "org.freedesktop.DBus.Properties", "Get");
-            
-
             method.append(iface, prop);
             auto reply = bus_.call(method);
             std::variant<std::string> v;
             reply.read(v);
             return std::get<std::string>(v);
         }
-        /**uint64_t readU64Prop(const std::string& service, const std::string& path,
-                                const std::string& iface, const std::string& prop)
+
+        uint64_t readU64Prop(const std::string& service, const std::string& path,
+                             const std::string& iface, const std::string& prop)
         {
             std::string svc = service;
             std::string pth = path;
-            std::cout << "[DBG] u64-1 enter" << std::endl;
             auto method = bus_.new_method_call(svc.c_str(), pth.c_str(),
                                    "org.freedesktop.DBus.Properties", "Get");
-            std::cout << "[DBG] u64-2 method-created" << std::endl;
             method.append(iface, prop);
-            std::cout << "[DBG] u64-3 appended" << std::endl;
             auto reply = bus_.call(method);
-            std::cout << "[DBG] u64-4 called" << std::endl;
             std::variant<uint64_t> v;
             reply.read(v);
-            std::cout << "[DBG] u64-5 read-ok value=" << std::get<uint64_t>(v) << std::endl;
             return std::get<uint64_t>(v);
-        }**/
-        uint64_t readU64Prop(const std::string& service, const std::string& path,
-                                const std::string& iface, const std::string& prop)
-        {
-            std::string svc = service;
-            std::string pth = path;
-            std::cout << "[DBG] u64-1 enter" << std::endl;
-
-            // ==== 插桩1：顺序矩阵（字面量/拷贝 各两轮）====
-            std::cout << "[DBG] u64-A svc=[" << svc << "] @" << static_cast<const void*>(svc.c_str()) << std::endl;
-            std::cout << "[DBG] u64-A pth=[" << pth << "] @" << static_cast<const void*>(pth.c_str()) << std::endl;
-
-            sd_bus* rawBus = nullptr;
-            int rr = sd_bus_default_system(&rawBus);
-            std::cout << "[DBG] u64-0 rr=" << rr
-                      << " fd bus_=" << bus_.get_fd()
-                      << " fd raw=" << sd_bus_get_fd(rawBus) << std::endl;
-
-            sd_bus_message* mA = nullptr;
-            int r_lit_a = sd_bus_message_new_method_call(
-                rawBus, &mA, "xyz.openbmc_project.State.BMC",
-                "/xyz/openbmc_project/state/bmc0",
-                "org.freedesktop.DBus.Properties", "Get");
-            if (mA)
-            {
-                sd_bus_message_unref(mA);
-            }
-
-            sd_bus_message* mB = nullptr;
-            int r_cpy_a = sd_bus_message_new_method_call(
-                rawBus, &mB, svc.c_str(), pth.c_str(),
-                "org.freedesktop.DBus.Properties", "Get");
-            if (mB)
-            {
-                sd_bus_message_unref(mB);
-            }
-
-            sd_bus_message* mC = nullptr;
-            int r_lit_b = sd_bus_message_new_method_call(
-                rawBus, &mC, "xyz.openbmc_project.State.BMC",
-                "/xyz/openbmc_project/state/bmc0",
-                "org.freedesktop.DBus.Properties", "Get");
-            if (mC)
-            {
-                sd_bus_message_unref(mC);
-            }
-
-            sd_bus_message* mD = nullptr;
-            int r_cpy_b = sd_bus_message_new_method_call(
-                rawBus, &mD, svc.c_str(), pth.c_str(),
-                "org.freedesktop.DBus.Properties", "Get");
-            if (mD)
-            {
-                sd_bus_message_unref(mD);
-            }
-
-            std::cout << "[DBG] u64-B lit=" << r_lit_a << " cpy=" << r_cpy_a
-                      << " lit2=" << r_lit_b << " cpy2=" << r_cpy_b << std::endl;
-
-
-            // ==== 插桩2：sdbusplus 路径 + 兜底 catch（服务不再崩）====
-            try
-            {
-                auto method = bus_.new_method_call(svc.c_str(), pth.c_str(),
-                                       "org.freedesktop.DBus.Properties", "Get");
-                std::cout << "[DBG] u64-2 method-created" << std::endl;
-                method.append(iface, prop);
-                std::cout << "[DBG] u64-3 appended" << std::endl;
-                auto reply = bus_.call(method);
-                std::cout << "[DBG] u64-4 called" << std::endl;
-                std::variant<uint64_t> v;
-                reply.read(v);
-                std::cout << "[DBG] u64-5 read-ok value=" << std::get<uint64_t>(v) << std::endl;
-                return std::get<uint64_t>(v);
-            }
-            catch (const std::exception& e)
-            {
-                std::cout << "[DBG] u64 SDBUSPLUS THREW: " << e.what() << std::endl;
-                return 0;
-            }
         }
 
-
-        
         double readMetric(const std::string& objectPath)
         {
-            std::cout << "[DBG] metric enter [" << objectPath << "]" << std::endl;
             auto method = bus_.new_method_call(
                 "xyz.moebius.MemInfo", objectPath,
                 "org.freedesktop.DBus.Properties", "Get");
-
-            
-                
             method.append("xyz.openbmc_project.Metric.Value", "Value");
-
             auto reply = bus_.call(method);
-
             std::variant<double> v;
             reply.read(v);
             return std::get<double>(v);
         }
 
         static std::string tail(const std::string& s) { return s.substr(s.rfind('.') + 1); }
-
-        
-
-         
-
-
 };
-
-
-
-
