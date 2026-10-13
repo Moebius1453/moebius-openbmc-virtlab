@@ -1,0 +1,9 @@
+[Unit]
+Description=Moebius memory alarm responder
+
+[Service]
+ExecStart=@BINDIR@/memalarmer
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -2,6 +2,8 @@
 #include <sdbusplus/bus/match.hpp>
 
 #include <iostream>
+#include <string>
+
 
 int main()
 {
@@ -22,7 +24,18 @@ int main()
         rule,
         [](sdbusplus::message_t& msg)
         {
-            std::cout << "[memalarmer] signal received" << std::endl;
+            // TODO：先准备存放告警内容的变量，再解码消息
+            std::string type;
+            std::string bound;
+            bool asserted = false;
+            double value = 0.0;
+            msg.read(type, bound, asserted, value);
+
+            std::cout << "[memalarmer] type=" << type
+                      << " bound=" << bound
+                      << " state=" << (asserted ? "ASSERTED" : "CLEARED")
+                      << " value=" << value << "%"
+                      << std::endl;
         }
     );
 
