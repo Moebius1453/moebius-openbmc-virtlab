@@ -1,30 +1,48 @@
-#include <sys/statvfs.h>
-#include <iostream>
+#include "storageinfo.hpp"
+
+#include <sdbusplus/bus.hpp>
+#include <sdbusplus/server/manager.hpp>
 
 int main()
 {
-    struct statvfs info {};
+    auto bus = sdbusplus::bus::new_default();
 
-    // TODO：查询文件系统，把结果写入 info
-    if (statvfs("/run/initramfs/rw", &info) != 0)
+    bus.request_name("xyz.moebius.StorageInfo");
+
+    sdbusplus::server::manager_t manager(
+        bus,
+        "/xyz/openbmc_project/metric/bmc/storage/rw"
+    );
+
+    // TODO：创建 total 和 available 两个对象
+
+    StorageInfo total(
+        bus,
+        "/xyz/openbmc_project/metric/bmc/storage/rw/total",
+        StorageInfo::Mode::Total
+    );
+
+    StorageInfo available(
+        bus,
+        "/xyz/openbmc_project/metric/bmc/storage/rw/available",
+        StorageInfo::Mode::Available
+    );
+
+
+    // TODO：首次采集，再进入事件循环
+
+    total.update();
+    available.update();
+
+    while (true)
     {
-        std::cerr << "[storageinfo] failed to read filesystem statistics"
-                  << std::endl;
-        return 1;
+        bus.process_discard();
+        bus.wait(10000000);
+
+        total.update();
+        available.update();
     }
 
-    // TODO：把统计字段换算成字节并打印
-
-    const auto totalBytes =
-    static_cast<unsigned long long>(info.f_blocks) * info.f_frsize;
-
-    const auto availableBytes =
-    static_cast<unsigned long long>(info.f_bavail) * info.f_frsize;
-
-    std::cout << "[storageinfo] total=" << totalBytes
-          << " bytes available=" << availableBytes
-          << " bytes"
-          << std::endl;
 
     return 0;
 }
