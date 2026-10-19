@@ -44,8 +44,14 @@ class HealthReporter : public sdbusplus::server::object_t<SensorValueIntf, OpSta
             uint64_t lastReboot = readU64Prop(
                 "xyz.openbmc_project.State.BMC", "/xyz/openbmc_project/state/bmc0",
                 "xyz.openbmc_project.State.BMC", "LastRebootTime");
-            double used = readMetric("/xyz/openbmc_project/metric/bmc/memory/used");
-            double total = readMetric("/xyz/openbmc_project/metric/bmc/memory/total");
+            double used = readMetric(
+                "xyz.moebius.MemInfo",
+                "/xyz/openbmc_project/metric/bmc/memory/used");
+
+            double total = readMetric(
+                "xyz.moebius.MemInfo",
+                "/xyz/openbmc_project/metric/bmc/memory/total");
+
 
             auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
                              std::chrono::system_clock::now().time_since_epoch()).count();
@@ -117,10 +123,11 @@ class HealthReporter : public sdbusplus::server::object_t<SensorValueIntf, OpSta
             return std::get<uint64_t>(v);
         }
 
-        double readMetric(const std::string& objectPath)
+        double readMetric(const std::string& service,
+                  const std::string& objectPath)
         {
             auto method = bus_.new_method_call(
-                "xyz.moebius.MemInfo", objectPath,
+                service.c_str(), objectPath,
                 "org.freedesktop.DBus.Properties", "Get");
             method.append("xyz.openbmc_project.Metric.Value", "Value");
             auto reply = bus_.call(method);
