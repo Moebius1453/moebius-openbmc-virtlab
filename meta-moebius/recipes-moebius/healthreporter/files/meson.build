@@ -1,4 +1,4 @@
-project('healthreporter', 'cpp', version: '0.1.0')
+project('healthreporter', 'cpp', version: '0.1.1')
 
 sdbusplus_dep = dependency('sdbusplus')
 pdi_dep = dependency('phosphor-dbus-interfaces')
