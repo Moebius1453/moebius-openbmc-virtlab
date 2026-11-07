@@ -7,5 +7,5 @@
 ```
 meta-moebius/   自定义 Yocto 层——所有扩展（bb/bbappend、配置、服务）都在这里
 scripts/        构建与部署辅助脚本
-docs/           项目笔记与开发记录和碎碎念
+docs/           项目笔记与开发记录和碎碎念，并且记录项目日志
 ```
